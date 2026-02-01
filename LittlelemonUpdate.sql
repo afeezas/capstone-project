@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS `booking`;
 CREATE TABLE `booking` (
   `BookingID` int NOT NULL,
   `CustomerID` int NOT NULL,
-  `BookingDate` datetime NOT NULL,
+  `BookingDate` date NOT NULL,
   `TableNumber` int NOT NULL,
   `StaffID` int DEFAULT NULL,
   PRIMARY KEY (`BookingID`),
@@ -40,6 +40,7 @@ CREATE TABLE `booking` (
 
 LOCK TABLES `booking` WRITE;
 /*!40000 ALTER TABLE `booking` DISABLE KEYS */;
+INSERT INTO `booking` VALUES (2,4,'2023-01-01',5,NULL),(91,91,'2023-01-01',99,NULL);
 /*!40000 ALTER TABLE `booking` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -218,15 +219,15 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `AddBooking`(
     IN pCustomerID INT,
     IN pBookingID INT,
-    IN pBookingDate DATETIME,
     IN pTableNumber INT,
-    IN pStaffID INT
+    IN pBookingDate DATE
+    
 )
 BEGIN
-    INSERT INTO Booking (BookingID,CustomerID,TableNumber, BookingDate )
-    VALUES (pBookingID,pCustomerID,pTableNumber, pBookingDate );
+    INSERT INTO Booking (BookingID,CustomerID, TableNumber, BookingDate)
+    VALUES (pBookingID,pCustomerID,pTableNumber, pBookingDate);
 
-    SELECT LAST_INSERT_ID() AS NewBookingID;
+    SELECT ' Booking successfully created' AS ConfirmationMessage;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -250,7 +251,7 @@ BEGIN
     DELETE FROM Booking
     WHERE BookingID = pBookingID;
 
-    SELECT ROW_COUNT() AS RowsDeleted;
+    SELECT ' Booking successfully cancelled' AS ConfirmationMessage;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -291,35 +292,80 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `ManageBooking`(
     IN pAction VARCHAR(20),
     IN pBookingID INT,
     IN pCustomerID INT,
-    IN pBookingDate DATETIME,
     IN pTableNumber INT,
-    IN pStaffID INT
+    IN pBookingDate DATETIME
+    
+    
 )
 BEGIN
+    DECLARE vCount INT;
+
+    -- ============================
+    -- ADD BOOKING
+    -- ============================
     IF pAction = 'ADD' THEN
-        INSERT INTO Booking (CustomerID, BookingDate, TableNumber, StaffID)
-        VALUES (pCustomerID, pBookingDate, pTableNumber, pStaffID);
+        
+        -- Check if table already booked
+        SELECT COUNT(*) INTO vCount
+        FROM Booking
+        WHERE BookingDate = pBookingDate
+          AND TableNumber = pTableNumber;
 
-        SELECT LAST_INSERT_ID() AS NewBookingID;
+        IF vCount > 0 THEN
+            SELECT 'Table already booked for this date/time' AS ErrorMessage;
+            
+        END IF;
 
+        INSERT INTO Booking (BookingID,CustomerID, TableNumber,BookingDate)
+        VALUES (pBookingID,pCustomerID,pTableNumber,pBookingDate);
+
+        SELECT 'Booking added successfully' AS SuccessMessage;
+
+
+    -- ============================
+    -- UPDATE BOOKING
+    -- ============================
     ELSEIF pAction = 'UPDATE' THEN
+        
+        -- Check if new table/date is already booked by someone else
+        SELECT COUNT(*) INTO vCount
+        FROM Booking
+        WHERE BookingDate = pBookingDate
+          AND TableNumber = pTableNumber
+          AND BookingID <> pBookingID;
+
+        IF vCount > 0 THEN
+            SELECT 'Cannot update: table already booked for this date/time' AS ErrorMessage;
+            
+        END IF;
+
         UPDATE Booking
         SET BookingDate = pBookingDate,
-            TableNumber = pTableNumber,
-            StaffID = pStaffID
+            TableNumber = pTableNumber
+            
         WHERE BookingID = pBookingID;
 
-        SELECT ROW_COUNT() AS RowsAffected;
+        SELECT 'Booking updated successfully' AS SuccessMessage;
 
+
+    -- ============================
+    -- CANCEL BOOKING
+    -- ============================
     ELSEIF pAction = 'CANCEL' THEN
+        
         DELETE FROM Booking
         WHERE BookingID = pBookingID;
 
-        SELECT ROW_COUNT() AS RowsDeleted;
+        SELECT  'Booking cancelled successfully' AS SuccessMessage;
 
+
+    -- ============================
+    -- INVALID ACTION
+    -- ============================
     ELSE
         SELECT 'Invalid Action' AS ErrorMessage;
     END IF;
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -349,7 +395,7 @@ BEGIN
         StaffID = pStaffID
     WHERE BookingID = pBookingID;
 
-    SELECT ROW_COUNT() AS RowsAffected;
+    SELECT 'Booking updated successfully' AS SuccessMessage;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -366,4 +412,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-01  9:27:10
+-- Dump completed on 2026-02-01 22:43:07
