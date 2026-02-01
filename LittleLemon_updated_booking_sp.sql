@@ -23,16 +23,14 @@ DROP TABLE IF EXISTS `booking`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking` (
-  `BookingID` int NOT NULL AUTO_INCREMENT,
+  `BookingID` int NOT NULL,
   `CustomerID` int NOT NULL,
   `BookingDate` datetime NOT NULL,
   `TableNumber` int NOT NULL,
   `StaffID` int DEFAULT NULL,
   PRIMARY KEY (`BookingID`),
   KEY `CustomerID` (`CustomerID`),
-  KEY `StaffID` (`StaffID`),
-  CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`CustomerID`) REFERENCES `customer` (`CustomerID`),
-  CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`StaffID`) REFERENCES `staff` (`StaffID`)
+  KEY `StaffID` (`StaffID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -166,11 +164,7 @@ CREATE TABLE `orders` (
   `OrderDate` datetime NOT NULL,
   `TotalCost` decimal(10,2) DEFAULT NULL,
   `StaffID` int DEFAULT NULL,
-  PRIMARY KEY (`OrderID`),
-  KEY `BookingID` (`BookingID`),
-  KEY `StaffID` (`StaffID`),
-  CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`BookingID`) REFERENCES `booking` (`BookingID`),
-  CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`StaffID`) REFERENCES `staff` (`StaffID`)
+  PRIMARY KEY (`OrderID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -223,13 +217,14 @@ UNLOCK TABLES;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `AddBooking`(
     IN pCustomerID INT,
+    IN pBookingID INT,
     IN pBookingDate DATETIME,
     IN pTableNumber INT,
     IN pStaffID INT
 )
 BEGIN
-    INSERT INTO Booking (CustomerID, BookingDate, TableNumber, StaffID)
-    VALUES (pCustomerID, pBookingDate, pTableNumber, pStaffID);
+    INSERT INTO Booking (BookingID,CustomerID,TableNumber, BookingDate )
+    VALUES (pBookingID,pCustomerID,pTableNumber, pBookingDate );
 
     SELECT LAST_INSERT_ID() AS NewBookingID;
 END ;;
@@ -371,4 +366,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-31 21:07:03
+-- Dump completed on 2026-02-01  9:27:10
